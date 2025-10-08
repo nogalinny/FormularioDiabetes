@@ -126,7 +126,7 @@ if st.session_state.risco is not None:
         nivel = "Baixo"
     elif risco < 50:
         cor = "orange"
-        nivel = "Moderado "
+        nivel = "Moderado"
     else:
         cor = "red"
         nivel = "Alto"
