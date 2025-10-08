@@ -34,28 +34,67 @@ def calcular_risco(imc, pressao_alta, colesterol_alto, fumante, atividade_fisica
     return prob
 
 # ---------------------------
-# Interface do Streamlit
+# Configuração da página
 # ---------------------------
 st.set_page_config(page_title="Previsão de Diabetes", layout="centered")
-st.title("🔹 Previsão de Diabetes")
+st.title("🩺 Previsão de Diabetes")
 st.write("Preencha os dados abaixo para calcular o risco estimado de diabetes:")
 
-# Session state para controlar múltiplos cálculos
-if "calcular" not in st.session_state:
-    st.session_state.calcular = False
+# ---------------------------
+# Inicializar session_state
+# ---------------------------
+if "dados" not in st.session_state:
+    st.session_state.dados = {
+        "imc": 25.0,
+        "pressao_alta": 0,
+        "colesterol_alto": 0,
+        "fumante": 0,
+        "atividade_fisica": 0,
+        "alcool_excessivo": 0,
+        "frutas": 0,
+        "vegetais": 0
+    }
+
+if "risco" not in st.session_state:
+    st.session_state.risco = None
+
+# ---------------------------
+# Função para resetar formulário
+# ---------------------------
+def reset_form():
+    st.session_state.dados = {
+        "imc": 25.0,
+        "pressao_alta": 0,
+        "colesterol_alto": 0,
+        "fumante": 0,
+        "atividade_fisica": 0,
+        "alcool_excessivo": 0,
+        "frutas": 0,
+        "vegetais": 0
+    }
+    st.session_state.risco = None
 
 # ---------------------------
 # Formulário do paciente
 # ---------------------------
 with st.form("formulario_paciente"):
-    imc = st.number_input("Digite seu IMC", min_value=10.0, max_value=60.0, value=25.0)
-    pressao_alta = st.selectbox("Você tem pressão alta?", ["Não", "Sim"])
-    colesterol_alto = st.selectbox("Você tem colesterol alto?", ["Não", "Sim"])
-    fumante = st.selectbox("Você é fumante?", ["Não", "Sim"])
-    atividade_fisica = st.selectbox("Você pratica atividade física regularmente?", ["Não", "Sim"])
-    alcool_excessivo = st.selectbox("Você consome álcool em excesso?", ["Não", "Sim"])
-    frutas = st.selectbox("Você consome frutas regularmente?", ["Não", "Sim"])
-    vegetais = st.selectbox("Você consome vegetais regularmente?", ["Não", "Sim"])
+    imc = st.number_input("Digite seu IMC", min_value=10.0, max_value=60.0,
+                          value=st.session_state.dados["imc"])
+    
+    pressao_alta = st.selectbox("Você tem pressão alta?", ["Não", "Sim"],
+                                index=st.session_state.dados["pressao_alta"])
+    colesterol_alto = st.selectbox("Você tem colesterol alto?", ["Não", "Sim"],
+                                   index=st.session_state.dados["colesterol_alto"])
+    fumante = st.selectbox("Você é fumante?", ["Não", "Sim"],
+                           index=st.session_state.dados["fumante"])
+    atividade_fisica = st.selectbox("Você pratica atividade física regularmente?", ["Não", "Sim"],
+                                    index=st.session_state.dados["atividade_fisica"])
+    alcool_excessivo = st.selectbox("Você consome álcool em excesso?", ["Não", "Sim"],
+                                    index=st.session_state.dados["alcool_excessivo"])
+    frutas = st.selectbox("Você consome frutas regularmente?", ["Não", "Sim"],
+                          index=st.session_state.dados["frutas"])
+    vegetais = st.selectbox("Você consome vegetais regularmente?", ["Não", "Sim"],
+                            index=st.session_state.dados["vegetais"])
     
     submitted = st.form_submit_button("Calcular risco")
 
@@ -63,27 +102,36 @@ with st.form("formulario_paciente"):
 # Processamento após submit
 # ---------------------------
 if submitted:
-    # Converter respostas para 0 ou 1
-    pressao_alta_val = 1 if pressao_alta == "Sim" else 0
-    colesterol_alto_val = 1 if colesterol_alto == "Sim" else 0
-    fumante_val = 1 if fumante == "Sim" else 0
-    atividade_fisica_val = 1 if atividade_fisica == "Sim" else 0
-    alcool_excessivo_val = 1 if alcool_excessivo == "Sim" else 0
-    frutas_val = 1 if frutas == "Sim" else 0
-    vegetais_val = 1 if vegetais == "Sim" else 0
+    st.session_state.dados = {
+        "imc": imc,
+        "pressao_alta": 1 if pressao_alta == "Sim" else 0,
+        "colesterol_alto": 1 if colesterol_alto == "Sim" else 0,
+        "fumante": 1 if fumante == "Sim" else 0,
+        "atividade_fisica": 1 if atividade_fisica == "Sim" else 0,
+        "alcool_excessivo": 1 if alcool_excessivo == "Sim" else 0,
+        "frutas": 1 if frutas == "Sim" else 0,
+        "vegetais": 1 if vegetais == "Sim" else 0
+    }
     
-    # Calcular risco
-    risco = calcular_risco(imc, pressao_alta_val, colesterol_alto_val, fumante_val,
-                           atividade_fisica_val, alcool_excessivo_val, frutas_val, vegetais_val)
-    
-    st.success(f"🔹 Risco estimado de diabetes: {risco:.2f}%")
-    st.session_state.calcular = True
+    st.session_state.risco = calcular_risco(**st.session_state.dados)
 
 # ---------------------------
-# Botão para novo paciente
+# Mostrar resultado de forma visual
 # ---------------------------
-if st.session_state.calcular:
-    if st.button("Novo paciente"):
-        # Resetar session_state
-        st.session_state.calcular = False
-        st.experimental_rerun()  # opcional, mas garante reset completo do formulário
+if st.session_state.risco is not None:
+    risco = st.session_state.risco
+    
+    if risco < 20:
+        cor = "green"
+        nivel = "Baixo ✅"
+    elif risco < 50:
+        cor = "orange"
+        nivel = "Moderado ⚠️"
+    else:
+        cor = "red"
+        nivel = "Alto ❌"
+    
+    st.markdown(f"### Risco estimado de diabetes: {risco:.2f}% ({nivel})")
+    
+    st.progress(int(risco))  # barra de progresso
+    st.button("Novo paciente", on_click=reset_form)
