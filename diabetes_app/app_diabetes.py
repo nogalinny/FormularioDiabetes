@@ -4,7 +4,12 @@ import pandas as pd
 import joblib  # Para carregar o modelo
 
 #  Carregar o modelo treinado
-modelo = joblib.load("modelo_diabetes.pkl")  # Certifique-se que está na mesma pasta
+import os
+
+# Caminho absoluto relativo ao script
+caminho_modelo = os.path.join(os.path.dirname(__file__), "modelo_diabetes.pkl")
+modelo = joblib.load(caminho_modelo)
+
 
 # Função para calcular risco
 def calcular_risco(imc, pressao_alta, colesterol_alto, fumante, atividade_fisica,
